@@ -273,7 +273,8 @@ ProcessFrame dequeueOldest(LRUQueue *queue) {
         frames_length: um número aleatório entre 1 e MAX_FRAMES, definindo
             a quantidade de frames que o processo possui
         frames: array de int para indicar a posição da memória que o frame
-            está ocupando
+            está ocupando. se ele não estiver ocupando, ele é indicado com 
+            o valor -1
     */
 Process createProcess() {
     if (table.length == PROCESS_TABLE_SIZE) {
