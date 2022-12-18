@@ -119,6 +119,9 @@ void clockTimeUnit() {
         runProcesses();
 
         displayLRUQueue();
+
+        fflush(stdout);
+        sleep(1);
     }
 }
 
