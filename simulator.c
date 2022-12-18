@@ -215,7 +215,7 @@ void deallocateMemory(Process *process, int frame) {
 }
 
 void displayMemory() {
-    printf("\nMEMORY\n[ ");
+    printf("\nMEMORIA\n[ ");
     for (int i = 0; i < SYSTEM_MEMORY; i++) {
         printf("%d ", memory.frames[i]);
     }
