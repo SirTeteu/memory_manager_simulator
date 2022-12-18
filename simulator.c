@@ -31,6 +31,7 @@
 #define MAX_FRAMES 10
 #define WORKING_SET_LIMIT 4
 #define MAX_PROCESSES 20
+#define NUMBER_OF_CLOCKS 500
 
 /* struct com as informações do processo e seus frames */
 typedef struct {
@@ -106,7 +107,7 @@ int main() {
 }
 
 void clockTimeUnit() {
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < NUMBER_OF_CLOCKS; i++)
     {
         printf("\n-------------------- clock %d --------------------\n\n", i);
 
