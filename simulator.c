@@ -30,6 +30,7 @@
 #define MIN_PID 1000
 #define MAX_FRAMES 10
 #define WORKING_SET_LIMIT 4
+#define MAX_PROCESSES 20
 
 /* struct com as informações do processo e seus frames */
 typedef struct {
@@ -87,6 +88,7 @@ void runProcesses();
 void displayMemory();
 void displayLRUQueue();
 void dequeueOldestFromProcess(Process process);
+void displayProcessLRUFrames(Process process);
 
 ProcessTable table;
 Memory memory;
@@ -101,81 +103,6 @@ int main() {
     initQueue(&queue);
 
     clockTimeUnit();
-
-    // Process processo1 = createProcess();
-    // Process processo2 = createProcess();
-    // Process processo3 = createProcess();
-    // Process processo4 = createProcess();
-
-    // for(int i = 0; i < 4; i++) {
-    //     printf("Processo %d:\n pid - %d\n frames na memoria: %d\n numero de frames: %d\n", i,
-    //         table.running_processes[i].pid, table.running_processes[i].frames_in_memory, table.running_processes[i].frames_length);
-    // }
-
-    // printf("\n");
-
-    // enqueue(&queue, processo2, 0);
-    // enqueue(&queue, processo1, 0);
-    // enqueue(&queue, processo4, 0);
-    // enqueue(&queue, processo3, 0);
-
-    // for(int i = 0; i <= queue.rear; i++) {
-    //     printf("%d. pid %d frame %d, ", i, queue.frames[i].pid, queue.frames[i].frame_index);
-    // }
-    // printf("\n");
-
-    // dequeueOldest(&queue);
-
-    // for(int i = 0; i <= queue.rear; i++) {
-    //     printf("%d. pid %d frame %d, ", i, queue.frames[i].pid, queue.frames[i].frame_index);
-    // }
-    // printf("\n");
-
-    // dequeueFrame(&queue, processo3, 0);
-
-    // for(int i = 0; i <= queue.rear; i++) {
-    //     printf("%d. pid %d frame %d, ", i, queue.frames[i].pid, queue.frames[i].frame_index);
-    // }
-    // printf("\n");
-
-    // allocateMemory(&processo1, 0);
-    // allocateMemory(&processo4, 0);
-
-    // printf("pid %d, frames in memory %d: ", processo1.pid, processo1.frames_in_memory);
-    // for(int i = 0; i < processo1.frames_length; i++) {
-    //     printf("%d ", processo1.frames[i]);
-    // }
-    // printf("\n");
-
-    // printf("pid %d, frames in memory %d: ", processo4.pid, processo4.frames_in_memory);
-    // for(int i = 0; i < processo4.frames_length; i++) {
-    //     printf("%d ", processo4.frames[i]);
-    // }
-    // printf("\n");
-
-    // for(int i = 0; i < SYSTEM_MEMORY; i++) {
-    //     printf("%d: %d\n", i, memory.frames[i]);
-    // }
-    // printf("\n");
-
-    // deallocateMemory(&processo1, 0);
-
-    // printf("pid %d, frames in memory %d: ", processo1.pid, processo1.frames_in_memory);
-    // for(int i = 0; i < processo1.frames_length; i++) {
-    //     printf("%d ", processo1.frames[i]);
-    // }
-    // printf("\n");
-
-    // printf("pid %d, frames in memory %d: ", processo4.pid, processo4.frames_in_memory);
-    // for(int i = 0; i < processo4.frames_length; i++) {
-    //     printf("%d ", processo4.frames[i]);
-    // }
-    // printf("\n");
-
-    // for(int i = 0; i < SYSTEM_MEMORY; i++) {
-    //     printf("%d: %d\n", i, memory.frames[i]);
-    // }
-
 }
 
 void clockTimeUnit() {
@@ -183,17 +110,13 @@ void clockTimeUnit() {
     {
         printf("\n-------------------- clock %d --------------------\n\n", i);
 
-        // #1. Cada processo é criado a cada 3 segundos;
-        if (i%3 == 0) {
+        if (i%3 == 0 && table.length <= MAX_PROCESSES) {
             Process process = createProcess();
-            printf("criado processo %d\n", process.pid);
+            printf("Criado PROCESSO %d\n\n", process.pid);
         }
 
         runProcesses();
 
-        // #3. A cada solicitação de página o gerenciador da MV tem que apresentar a tabela de páginas virtuais do processo solicitante;
-
-        displayMemory();
         displayLRUQueue();
     }
 }
@@ -201,23 +124,24 @@ void clockTimeUnit() {
 void runProcesses() {
     for (int i = 0; i < table.length; i++) {
 
-        // #2. Cada processo criado solicita a alocação de uma página aleatória na memória a cada 3 segundos;
         if (table.running_processes[i].time_running++ % 3 == 0) {
             int frame_to_allocate = generateRandomNumber(0, table.running_processes[i].frames_length - 1);
-            printf("PROCESSO %d PEDIU ALOCACAO DA PAGINA %d\n", table.running_processes[i].pid, frame_to_allocate);
+            printf("\nPROCESSO %d pediu alocacao da PAGINA %d\n", table.running_processes[i].pid, frame_to_allocate);
+            displayProcessLRUFrames(table.running_processes[i]);
 
             if (table.running_processes[i].frames[frame_to_allocate] != -1) {
-                printf("%sPAGINA JA TA NA MEMORIA\n%s", KGRN, RESET);
+                printf("%sPAGINA encontrada na MEMORIA\n%s", KGRN, RESET);
                 dequeueFrame(table.running_processes[i], frame_to_allocate);
             } else {
-                printf("%sPAGE FAULT\n%s", KYEL, RESET);
+                printf("%sPAGE FAULT%s\n", KYEL, RESET);
 
                 if(table.running_processes[i].frames_in_memory == 4) {
-                    printf("%sPROCESSO %d ATINGIU O WSL%s\n", KRED, table.running_processes[i].pid, RESET);
+                    printf("%sPROCESSO %d atingiu o WSL%s\n", KRED, table.running_processes[i].pid, RESET);
                     dequeueOldestFromProcess(table.running_processes[i]);
                 }
-
+                printf("Adicionando %d0%d na MEMORIA\n", table.running_processes[i].pid, frame_to_allocate);
                 allocateMemory(&table.running_processes[i], frame_to_allocate);
+                displayProcessLRUFrames(table.running_processes[i]);
             }
 
         }
@@ -245,19 +169,35 @@ void initMemory() {
 void allocateMemory(Process *process, int frame) {
     int memory_pos = 0;
 
-    while (memory_pos <= SYSTEM_MEMORY && memory.frames[memory_pos]) {
+    while (memory_pos < SYSTEM_MEMORY && memory.frames[memory_pos]) {
         memory_pos++;
     }
 
-    if (memory_pos <= SYSTEM_MEMORY) {
-        process->frames[frame] = memory_pos;
-        memory.frames[memory_pos] = (process->pid * 100) + frame;
-        process->frames_in_memory++;
-        enqueue(*process, frame);
-    } else {
-        printf("DESALOCAR MAIS ANTIGO\n");
+    if (memory_pos >= SYSTEM_MEMORY) {
+        printf("%sMEMORIA cheia, desalocar PAGINA mais antiga%s\n", KRED, RESET);
+        ProcessFrame oldest = dequeueOldest(&queue);
+        printf("PAGINA mais antiga %d0%d\n", oldest.pid, oldest.frame_index);
+
+        Process oldest_process;
+
+        for (int i = 0; i < table.length; i++) {
+            if (table.running_processes[i].pid == oldest.pid) {
+                oldest_process = table.running_processes[i];
+            }
+        }
+
+        memory.frames[oldest_process.frames[oldest.frame_index]] = 0;
+        memory_pos = oldest_process.frames[oldest.frame_index];
+        oldest_process.frames[oldest.frame_index] = -1;
+        oldest_process.frames_in_memory--;
     }
 
+    process->frames[frame] = memory_pos;
+    memory.frames[memory_pos] = (process->pid * 100) + frame;
+    process->frames_in_memory++;
+    enqueue(*process, frame);
+
+    displayMemory();
 }
 
 /* Desaloca um frame de um processo da memória. Ele apaga no frame do processo
@@ -269,6 +209,8 @@ void deallocateMemory(Process *process, int frame) {
     memory.frames[memory_pos] = 0;
     process->frames[frame] = -1;
     process->frames_in_memory--;
+
+    displayMemory();
 }
 
 void displayMemory() {
@@ -276,7 +218,7 @@ void displayMemory() {
     for (int i = 0; i < SYSTEM_MEMORY; i++) {
         printf("%d ", memory.frames[i]);
     }
-    printf("]\n");
+    printf("]\n\n");
 }
 
 /* Inicializa a estrutura de dados de fila */
@@ -301,27 +243,27 @@ void enqueue(Process process, int frame) {
     está no meio da fila para colocá-lo no final. A função executa somente
     quando possui frames na fila. */
 void dequeueFrame(Process process, int frame) {
-    printf("MOVER A PAGINA %d0%d\n", process.pid, frame);
+    printf("Atualizar %d0%d para a PAGINA mais recente\n", process.pid, frame);
     if (queue.rear >= 0) {
         for(int i = 0; i <= queue.rear; i++) {
             if (queue.frames[i].pid == process.pid && queue.frames[i].frame_index == frame) {
-                printf("QUE TA NA POSICAO %d\n", i);
                 for(int j = i; j < queue.rear + 1; j++) {
                     queue.frames[j] = queue.frames[j + 1];
                 }
             }
         }
 
-        printf("REAR %d\n", queue.rear);
         queue.frames[queue.rear].pid = process.pid;
         queue.frames[queue.rear].frame_index = frame;
     }
+
+    displayProcessLRUFrames(process);
 }
 
 void dequeueOldestFromProcess(Process process) {
     for(int i = 0; i <= queue.rear; i++) {
         if (queue.frames[i].pid == process.pid) {
-            printf("VAI SAIR O %d QUE TA NA POSICAO %d DA MEMORIA\n", (queue.frames[i].pid * 100) + queue.frames[i].frame_index, i);
+            printf("PAGINA usada a mais tempo %d\n", (queue.frames[i].pid * 100) + queue.frames[i].frame_index);
             memory.frames[process.frames[queue.frames[i].frame_index]] = 0;
             process.frames[queue.frames[i].frame_index] = -1;
             process.frames_in_memory--;
@@ -358,6 +300,8 @@ ProcessFrame dequeueOldest(LRUQueue *queue) {
         queue->rear--;
         return oldest;
     }
+
+    displayLRUQueue();
 }
 
 void displayLRUQueue() {
@@ -365,7 +309,7 @@ void displayLRUQueue() {
     for (int i = 0; i < queue.rear + 1; i++) {
         printf(" %d", (queue.frames[i].pid * 100) + queue.frames[i].frame_index);
     }
-    printf(" ]\n");
+    printf(" ]\n\n");
 }
 
 
@@ -464,4 +408,16 @@ void destroyProcess(Process process) {
     limite mínimo e um limite máximo */
 int generateRandomNumber(int lower_limit, int upper_limit) {
     return (rand() % (upper_limit - lower_limit + 1)) + lower_limit;
+}
+
+void displayProcessLRUFrames(Process process) {
+    printf("Tabela da MV do processo %d:\n[", process.pid);
+
+    for (int i = 0; i < queue.rear + 1; i++) {
+        if(queue.frames[i].pid == process.pid) {
+            printf(" %d0%d", queue.frames[i].pid, queue.frames[i].frame_index);
+        }
+    }
+
+    printf(" ]\n");
 }
