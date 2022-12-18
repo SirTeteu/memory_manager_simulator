@@ -75,7 +75,7 @@ void deallocateMemory(Process *process, int frame);
 
 void initQueue(LRUQueue *queue);
 void enqueue(Process process, int frame);
-void dequeueFrame(Process process, int frame);
+void updateFrame(Process process, int frame);
 ProcessFrame dequeueOldest(LRUQueue *queue);
 
 Process createProcess();
@@ -135,7 +135,7 @@ void runProcesses() {
 
             if (table.running_processes[i].frames[frame_to_allocate] != -1) {
                 printf("%sPAGINA encontrada na MEMORIA\n%s", KGRN, RESET);
-                dequeueFrame(table.running_processes[i], frame_to_allocate);
+                updateFrame(table.running_processes[i], frame_to_allocate);
             } else {
                 printf("%sPAGE FAULT%s\n", KYEL, RESET);
 
@@ -242,11 +242,11 @@ void enqueue(Process process, int frame) {
     }
 }
 
-/* Remove um frame de um processo da fila LRU e anda com todos os frames pra
-    frente. Essa função é para situações onde deseja-se tirar um frame que
-    está no meio da fila para colocá-lo no final. A função executa somente
+/* Remove um frame de um processo da fila LRU, anda com todos os frames pra
+    frente e realoca o frame no final da fila. Essa função é para situações onde deseja-se
+    tirar um frame que está no meio da fila para colocá-lo no final. A função executa somente
     quando possui frames na fila. */
-void dequeueFrame(Process process, int frame) {
+void updateFrame(Process process, int frame) {
     printf("Atualizar %d0%d para a PAGINA mais recente\n", process.pid, frame);
     if (queue.rear >= 0) {
         for(int i = 0; i <= queue.rear; i++) {
